@@ -1,0 +1,93 @@
+---
+title: "Final project for practical machine learning"
+output: html_document
+---
+
+To build a machine learning model for predicting the classe of individuals using their motion data, I first organized and cleaned the training data sets. Then I further split the orginal training sets into training and testing data sets. I used random forest tree method to build the prediction model and tested on the testing data sets. With the success in predicing classe values in testing data sets, I used the model to predict classe values using the given motion data.
+
+### Step 1. Organize and clean the training data
+The datasets containing lots of variables with NA values and empty values, so these variables are removed to reduce the computation loads. Then the name variable is also removed. 
+
+```{r}
+setwd("~/desktop/data science/project 4")
+fitdata1=read.csv("pml-training.csv")
+fitdata2=read.csv("pml-testing.csv")
+fitdata1[fitdata1==""]=NA
+fitdata2[fitdata2==""]=NA
+cleandata1=fitdata1[,colSums(is.na(fitdata1))<100]
+cleandata2=fitdata2[,colSums(is.na(fitdata2))<5]
+cleandata1=cleandata1[c(-1,-2)]
+```
+### Step 2. Organize the orginal training datasets into testing and training datasets
+
+```{r}
+set.seed(1233)
+library(caret)
+intrain=createDataPartition(cleandata1$class,p=0.6,list=FALSE)
+train=cleandata1[intrain,]
+test=cleandata1[-intrain,]
+```
+### Step 3. Build the prediction model using random forest tree method
+Typically having 50-100 trees will give good results with reasonable amount of computation time
+
+```{r}
+
+modfit=train(classe~.,data=train,method="rf",ntree=50)
+modfit
+```
+
+### Step 4. Validate the prediction model using testing data sets
+
+```{r}
+pred=predict(modfit,test)
+confusionMatrix(pred,test$classe)
+```
+---
+Validation Results:
+Confusion Matrix and Statistics
+
+          Reference
+Prediction    A    B    C    D    E
+         A 2232    3    0    0    0
+         B    0 1515    1    0    0
+         C    0    0 1367    5    0
+         D    0    0    0 1280    0
+         E    0    0    0    1 1442
+
+Overall Statistics
+                                          
+               Accuracy : 0.9987          
+                 95% CI : (0.9977, 0.9994)
+    No Information Rate : 0.2845          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.9984          
+ Mcnemar's Test P-Value : NA              
+
+Statistics by Class:
+
+                     Class: A Class: B Class: C Class: D Class: E
+Sensitivity            1.0000   0.9980   0.9993   0.9953   1.0000
+Specificity            0.9995   0.9998   0.9992   1.0000   0.9998
+Pos Pred Value         0.9987   0.9993   0.9964   1.0000   0.9993
+Neg Pred Value         1.0000   0.9995   0.9998   0.9991   1.0000
+Prevalence             0.2845   0.1935   0.1744   0.1639   0.1838
+Detection Rate         0.2845   0.1931   0.1742   0.1631   0.1838
+Detection Prevalence   0.2849   0.1932   0.1749   0.1631   0.1839
+Balanced Accuracy      0.9997   0.9989   0.9992   0.9977   0.9999
+---
+The confusion matrix shows the model has great sensitivity.
+
+### Step 5. Use the built model to predict casse for given data sets
+
+```{r}
+newclasse=predict(modfit,cleandata2)
+print(newclasse)
+
+```
+
+---
+Predictions: [1] B A B A A E D B A A B C B A E E A B B B
+Levels: A B C D E
+100% accuracy using my model
+---
